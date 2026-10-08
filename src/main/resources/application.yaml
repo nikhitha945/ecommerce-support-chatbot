@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: chatbot
+  ai:
+    ollama:
+      base-url: http://localhost:11434
+      chat:
+        model: llama3.1:8b
+      embedding:
+        model: nomic-embed-text
+  datasource:
+    url: jdbc:postgresql://localhost:5432/supportbot
+    username: bot
+    password: bot
