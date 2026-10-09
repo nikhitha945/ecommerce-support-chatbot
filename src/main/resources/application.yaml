@@ -8,6 +8,10 @@ spring:
         model: llama3.1:8b
       embedding:
         model: nomic-embed-text
+    vectorstore:
+      pgvector:
+        dimensions: 768
+        initialize-schema: true
   datasource:
     url: jdbc:postgresql://localhost:5432/supportbot
     username: bot
