@@ -1,8 +1,13 @@
 package com.support.chatbot.controller;
 
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.document.Document;
+import org.springframework.ai.vectorstore.SearchRequest;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,9 +17,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api")
 public class ChatController {
     private final ChatClient chatClient;
+    private final VectorStore vectorStore;
 
-    public ChatController(ChatClient.Builder builder) {
+    public ChatController(ChatClient.Builder builder, VectorStore vectorStore) {
         this.chatClient = builder.build();
+        this.vectorStore = vectorStore;
     }
 
     @PostMapping("/chat")
@@ -25,4 +32,43 @@ public class ChatController {
                 .content();
         return Map.of("reply", reply);
     }
+
+    @PostMapping("/ask")
+    public Map<String, Object> ask(@RequestBody Map<String, String> body) {
+        String question = body.get("question");
+
+        // 1. Retrieve: embed the question, find the 4 most similar chunks
+        List<Document> docs = vectorStore.similaritySearch(
+                SearchRequest.builder()
+                        .query(question)
+                        .topK(4)
+                        .similarityThreshold(0.5)
+                        .build());
+
+        // 2. Build context, tagging each chunk with its source file
+        String context = docs.stream()
+                .map(d -> "[Source: " + d.getMetadata().get("source") + "]\n" + d.getText())
+                .collect(Collectors.joining("\n\n"));
+
+        // 3. Generate: answer strictly from the retrieved context
+        String answer = chatClient.prompt()
+                .system(s -> s.text("""
+            You are BrightCart's support assistant. Answer ONLY using the context below.
+            Cite the source filename for each fact you use, like [return-policy.md].
+            If the context does not contain the answer, say you don't know and offer to connect the customer with support.
+            Context:
+            {context}
+            """).param("context", context))
+                .user(question)
+                .call()
+                .content();
+
+        List<String> sources = docs.stream()
+                .map(d -> (String) d.getMetadata().get("source"))
+                .distinct()
+                .toList();
+
+        return Map.of("answer", answer, "sources", sources);
+    }
+
 }
