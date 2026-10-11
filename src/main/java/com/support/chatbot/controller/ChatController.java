@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.support.chatbot.tools.OrderTools;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
@@ -18,10 +19,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class ChatController {
     private final ChatClient chatClient;
     private final VectorStore vectorStore;
+    private final OrderTools orderTools;
 
-    public ChatController(ChatClient.Builder builder, VectorStore vectorStore) {
+    public ChatController(ChatClient.Builder builder, VectorStore vectorStore, OrderTools orderTools) {
         this.chatClient = builder.build();
         this.vectorStore = vectorStore;
+        this.orderTools = orderTools;
     }
 
     @PostMapping("/chat")
@@ -53,13 +56,15 @@ public class ChatController {
         // 3. Generate: answer strictly from the retrieved context
         String answer = chatClient.prompt()
                 .system(s -> s.text("""
-            You are BrightCart's support assistant. Answer ONLY using the context below.
-            Cite the source filename for each fact you use, like [return-policy.md].
-            If the context does not contain the answer, say you don't know and offer to connect the customer with support.
-            Context:
-            {context}
-            """).param("context", context))
+        You are BrightCart's support assistant. You have two knowledge sources:
+        1. Support documents in the context below — cite the source filename like [return-policy.md].
+        2. An order lookup tool — use it when the customer asks about a specific order (IDs look like BC-1001).
+        Answer ONLY from these sources. If neither has the answer, say you don't know and offer to connect the customer with support.
+        Context:
+        {context}
+        """).param("context", context))
                 .user(question)
+                .tools(orderTools)
                 .call()
                 .content();
 
