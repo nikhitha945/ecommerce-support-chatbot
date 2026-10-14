@@ -29,8 +29,12 @@ public class ChatController {
 
     @PostMapping("/chat")
     public Map<String, String> chat(@RequestBody Map<String, String> body) {
+        String question = body.get(body.get("message"));
+        if (question == null || question.isBlank()) {
+            throw new IllegalArgumentException("question must not be blank");
+        }
         String reply = chatClient.prompt()
-                .user(body.get("message"))
+                .user(question)
                 .call()
                 .content();
         return Map.of("reply", reply);
@@ -39,6 +43,10 @@ public class ChatController {
     @PostMapping("/ask")
     public Map<String, Object> ask(@RequestBody Map<String, String> body) {
         String question = body.get("question");
+
+        if (question == null || question.isBlank()) {
+            throw new IllegalArgumentException("question must not be blank");
+        }
 
         // 1. Retrieve: embed the question, find the 4 most similar chunks
         List<Document> docs = vectorStore.similaritySearch(
