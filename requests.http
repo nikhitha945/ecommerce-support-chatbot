@@ -1,0 +1,66 @@
+### Ingest the docs (one time)
+POST http://localhost:8080/api/ingest
+
+### RAG: grounded, cited answer
+POST http://localhost:8080/api/ask
+Content-Type: application/json
+
+{
+  "question": "What is your return policy?"
+}
+
+### RAG: refund timing
+POST http://localhost:8080/api/ask
+Content-Type: application/json
+
+{
+  "question": "How long do refunds take to show up?"
+}
+
+### Tool: known order (shipped)
+POST http://localhost:8080/api/ask
+Content-Type: application/json
+
+{
+  "question": "Where is my order BC-1001?"
+}
+
+### Tool: unknown order -> graceful not-found
+POST http://localhost:8080/api/ask
+Content-Type: application/json
+
+{
+  "question": "Where is my order BC-9999?"
+}
+
+### Guardrail: no order ID -> asks for it
+POST http://localhost:8080/api/ask
+Content-Type: application/json
+
+{
+  "question": "Where is my order?"
+}
+
+### Refusal: off-topic
+POST http://localhost:8080/api/ask
+Content-Type: application/json
+
+{
+  "question": "What is the capital of France?"
+}
+
+### Raw chat (no retrieval, for comparison)
+POST http://localhost:8080/api/chat
+Content-Type: application/json
+
+{
+  "question": "Write a haiku about e-commerce."
+}
+
+### Validation: blank question -> 400
+POST http://localhost:8080/api/ask
+Content-Type: application/json
+
+{
+  "question": "   "
+}
