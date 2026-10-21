@@ -76,26 +76,24 @@ short answers ~1s). Honest local-inference numbers — no GPU, no paid API.
 | LLM (local)  | Ollama — `llama3.1:8b` (chat), `nomic-embed-text` (embeddings) |
 | Vector store | PostgreSQL 16 + pgvector (768-dim, HNSW cosine index)         |
 | Build / test | Maven, JUnit 5 + AssertJ + MockMvc                            |
-| Infra        | Docker Compose (Postgres)                                     |
+| Infra        | Docker Compose (app + Postgres + pgvector)                                     |
 
 ## Run it locally
 
-Prerequisites: Java 21, Maven, Docker, and the Ollama macOS app.
+Prerequisites: Docker Desktop and the Ollama macOS app. No local Java or Maven needed — the app builds inside Docker.
 
 ```bash
-# 1. Start Postgres + pgvector
-docker compose up -d
-
-# 2. Pull the models (one time, several GB)
+# 1. Start Ollama and pull the models (one time, several GB)
 ollama pull llama3.1:8b
 ollama pull nomic-embed-text
 
-# 3. Run the app
-mvn spring-boot:run
+# 2. Build and start everything (app + Postgres + pgvector)
+docker compose up --build
 
-# 4. Index the 15 BrightCart support docs (one time)
+# 3. In a second terminal, index the 15 BrightCart support docs (one time)
 curl -X POST localhost:8080/api/ingest
 # -> {"chunksStored":15}
+
 ```
 
 ## Try it
@@ -139,8 +137,7 @@ requests.http                  # runnable sample requests (IntelliJ)
 
 ## Roadmap
 
-- **Phase 2:** Dockerize the app, Kafka analytics pipeline (chat-interaction events off the request
-  path), GitHub Actions CI, Angular chat UI
+- **Phase 2:** **Phase 2 (in progress):** Dockerize the app ✅, Kafka analytics pipeline (chat-interaction events off the request path), GitHub Actions CI, Angular chat UI
 - **Phase 3:** Redis semantic cache, rate limiting on `/api/ask`, k6 load test with published numbers
 
 ## Why this project

@@ -3,7 +3,7 @@ spring:
     name: chatbot
   ai:
     ollama:
-      base-url: http://localhost:11434
+      base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
       chat:
         model: llama3.1:8b
       embedding:
@@ -13,6 +13,6 @@ spring:
         dimensions: 768
         initialize-schema: true
   datasource:
-    url: jdbc:postgresql://localhost:5432/supportbot
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/supportbot}
     username: bot
     password: bot
